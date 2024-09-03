@@ -10,9 +10,13 @@ namespace RestoreMonarchy.BuildingRestrictions
         public bool Debug { get; set; }
         public bool ShouldSerializeDebug() => Debug;
         public string MessageColor { get; set; }
+        public bool EnableMaxBuildings { get; set; }
         public int MaxBuildings { get; set; }
+        public bool EnableMaxBarricades { get; set; }
         public int MaxBarricades { get; set; }
+        public bool EnableMaxStructures { get; set; }
         public int MaxStructures { get; set; }
+        public bool BypassAdmin { get; set; }
 
         [XmlArrayItem("Barricade")]
         public BuildingRestriction[] Barricades { get; set; }
@@ -25,9 +29,13 @@ namespace RestoreMonarchy.BuildingRestrictions
         {
             Debug = false;
             MessageColor = "yellow";
+            EnableMaxBuildings = false;
             MaxBuildings = 200;
+            EnableMaxBarricades = false;
             MaxBarricades = 100;
+            EnableMaxStructures = false;
             MaxStructures = 150;
+            BypassAdmin = false;
             Barricades =
             [
                 new("sentries", 0, EBuild.SENTRY.ToString(), null, 5),

@@ -1,45 +1,98 @@
-﻿//using Rocket.API;
-//using Rocket.Unturned.Player;
-//using System;
-//using System.Collections.Generic;
-//using System.Linq;
-//using System.Text;
-//using System.Threading.Tasks;
+﻿using RestoreMonarchy.BuildingRestrictions.Models;
+using Rocket.API;
+using Rocket.Unturned.Player;
+using System.Collections.Generic;
 
-//namespace RestoreMonarchy.BuildingRestrictions.Commands
-//{
-//    public class BuildingStatsCommand : IRocketCommand
-//    {
-//        private BuildingRestrictionsPlugin pluginInstance => BuildingRestrictionsPlugin.Instance;
+namespace RestoreMonarchy.BuildingRestrictions.Commands
+{
+    public class BuildingStatsCommand : IRocketCommand
+    {
+        private BuildingRestrictionsPlugin pluginInstance => BuildingRestrictionsPlugin.Instance;
+        private BuildingRestrictionsConfiguration configuration => pluginInstance.Configuration.Instance;
 
-//        public void Execute(IRocketPlayer caller, string[] command)
-//        {
-//            string otherPlayerName = command.ElementAtOrDefault(0);
-//            ulong steamId = 0;
-//            if (otherPlayerName != null && caller.HasPermission("buildingstats.other"))
-//            {
-//                if (otherPlayerName.Length == 17 && ulong.TryParse(otherPlayerName, out steamId))
-//                {
+        public void Execute(IRocketPlayer caller, string[] command)
+        {
+            string structuresCount;
+            string barricadesCount;
+            string buildingsCount;
 
-//                }
+            if (caller is ConsolePlayer && command.Length == 0)
+            {
+                BuildingStats buildingStats = pluginInstance.Database.GetBuildingStats();
 
+                string playersCount = buildingStats.PlayersCount.ToString("N0");
+                structuresCount = buildingStats.StructuresCount.ToString("N0");
+                barricadesCount = buildingStats.BarricadesCount.ToString("N0");
+                buildingsCount = buildingStats.BuildingsCount.ToString("N0");
 
+                pluginInstance.SendMessageToPlayer(caller, "BuildingStats", playersCount, barricadesCount, structuresCount, buildingsCount);
+                return;
+            }
 
-//                UnturnedPlayer.FromName(otherPlayerName);
-//            }
+            ulong steamId = 0;
+            string playerName = null;
+            if (command.Length > 0)
+            {
+                if (!caller.HasPermission("buildingstats.other"))
+                {
+                    pluginInstance.SendMessageToPlayer(caller, "BuildingStatsOtherNoPermission");
+                    return;
+                }
 
-//        }
+                string playerNameOrSteamId = command[0];
 
-//        public AllowedCaller AllowedCaller => AllowedCaller.Both;
+                UnturnedPlayer player = UnturnedPlayer.FromName(playerNameOrSteamId);
+                if (player != null)
+                {
+                    steamId = player.CSteamID.m_SteamID;
+                    playerName = player.DisplayName;
+                } else if (playerNameOrSteamId.Length != 17)
+                {
+                    ulong.TryParse(playerNameOrSteamId, out steamId);
+                }
 
-//        public string Name => "buildingstats";
+                if (steamId == 0)
+                {
+                    pluginInstance.SendMessageToPlayer(caller, "PlayerNotFound", playerNameOrSteamId);
+                    return;
+                }
+            } else
+            {
+                UnturnedPlayer player = (UnturnedPlayer)caller;
+                steamId = player.CSteamID.m_SteamID;
+            }
 
-//        public string Help => "";
+            PlayerBuildingStats playerBuildingStats = pluginInstance.Database.GetPlayerBuildingStats(steamId);
 
-//        public string Syntax => "[player]";
+            buildingsCount = playerBuildingStats.BuildingsCount.ToString("N0");
+            structuresCount = playerBuildingStats.StructuresCount.ToString("N0");
+            barricadesCount = playerBuildingStats.BarricadesCount.ToString("N0");
 
-//        public List<string> Aliases => new();
+            decimal multiplier = pluginInstance.GetPlayerBuildingsMultiplier(new RocketPlayer(steamId.ToString()));
+            string buildingsLimit = configuration.EnableMaxBuildings ? $"/{configuration.MaxBuildings * multiplier:N0}" : "";
+            string structuresLimit = configuration.EnableMaxStructures ? $"/{configuration.MaxStructures * multiplier:N0}" : "";
+            string barricadesLimit = configuration.EnableMaxBarricades ? $"/{configuration.MaxBarricades * multiplier:N0}" : "";
 
-//        public List<string> Permissions => new();
-//    }
-//}
+            if (caller.Id == steamId.ToString())
+            {
+                pluginInstance.SendMessageToPlayer(caller, "PlayerBuildingStatsYou", barricadesCount, barricadesLimit, structuresCount, structuresLimit, buildingsCount, buildingsLimit);
+            } else
+            {
+                string name = playerName ?? steamId.ToString();
+                pluginInstance.SendMessageToPlayer(caller, "PlayerBuildingStats", name, barricadesCount, barricadesLimit, structuresCount, structuresLimit, buildingsCount, buildingsLimit);
+            }            
+        }
+
+        public AllowedCaller AllowedCaller => AllowedCaller.Both;
+
+        public string Name => "buildingstats";
+
+        public string Help => "";
+
+        public string Syntax => "[player]";
+
+        public List<string> Aliases => new();
+
+        public List<string> Permissions => new();
+    }
+}

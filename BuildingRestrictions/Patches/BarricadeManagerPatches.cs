@@ -8,9 +8,9 @@ namespace RestoreMonarchy.BuildingRestrictions.Patches
     {
         [HarmonyPatch(nameof(BarricadeManager.destroyBarricade), [typeof(BarricadeDrop), typeof(byte), typeof(byte), typeof(ushort)])]
         [HarmonyPostfix]
-        static void destroyBarricadePostfix(BarricadeDrop barricadeDrop)
+        static void destroyBarricadePostfix(BarricadeDrop barricade)
         {
-            BuildingRestrictionsPlugin.Instance.Database.RemovePlayerBarricade(barricadeDrop.model);
+            BuildingRestrictionsPlugin.Instance.Database.RemovePlayerBarricade(barricade.model);
         }
     }
 }
