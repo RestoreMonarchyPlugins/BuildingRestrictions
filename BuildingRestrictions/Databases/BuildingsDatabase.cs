@@ -26,6 +26,20 @@ namespace RestoreMonarchy.BuildingRestrictions.Databases
             return stats;
         }
 
+        public PlayerBuildingStats GetPlayerBuildingStats(ulong steamId)
+        {
+            PlayerBuildings playerBuildings = GetPlayerBuildings(steamId);
+
+            PlayerBuildingStats stats = new()
+            {
+                SteamId = steamId,
+                BarricadesCount = playerBuildings?.Barricades.Count ?? 0,
+                StructuresCount = playerBuildings?.Structures?.Count ?? 0,
+            };
+
+            return stats;
+        }
+
         public PlayerBuildings GetPlayerBuildings(ulong steamId)
         {
             return playerBuildings.FirstOrDefault(x => x.SteamId == steamId);

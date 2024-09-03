@@ -1,9 +1,11 @@
 ﻿using RestoreMonarchy.BuildingRestrictions.Databases;
 using RestoreMonarchy.BuildingRestrictions.Models;
 using Rocket.API;
+using Rocket.API.Collections;
 using Rocket.Core;
 using Rocket.Core.Logging;
 using Rocket.Core.Plugins;
+using Rocket.Unturned.Chat;
 using Rocket.Unturned.Player;
 using SDG.Unturned;
 using Steamworks;
@@ -17,11 +19,15 @@ namespace RestoreMonarchy.BuildingRestrictions
     public class BuildingRestrictionsPlugin : RocketPlugin<BuildingRestrictionsConfiguration>
     {
         public static BuildingRestrictionsPlugin Instance { get; private set; }
+        public UnityEngine.Color MessageColor { get; set; }
+
         public BuildingsDatabase Database { get; private set; }
 
         protected override void Load()
         {
             Instance = this;
+            MessageColor = UnturnedChat.GetColorFromName(Configuration.Instance.MessageColor, UnityEngine.Color.green);
+
             Database = new BuildingsDatabase();
 
             if (Level.isLoaded)
@@ -33,6 +39,7 @@ namespace RestoreMonarchy.BuildingRestrictions
             }
 
             BarricadeManager.onDeployBarricadeRequested += OnDeployBarricadeRequested;
+            StructureManager.onDeployStructureRequested += OnDeployStructureRequested;
             BarricadeManager.onBarricadeSpawned += OnBarricadeSpawned;
             StructureManager.onStructureSpawned += OnStructureSpawned;
 
@@ -48,6 +55,15 @@ namespace RestoreMonarchy.BuildingRestrictions
 
             Logger.Log($"{Name} has been unloaded!", ConsoleColor.Yellow);
         }
+
+        public override TranslationList DefaultTranslations => new()
+        {
+            { "BuildingsRestriction", "You can't build {0} because you have reached the limit of max {1} buildings." },
+            { "BarricadesRestriction", "You can't build {0} because you have reached the limit of max {1} barricades." },
+            { "StructuresRestriction", "You can't build {0} because you have reached the limit of max {1} structures." },
+            { "SpecificRestriction", "You can't build {0} because you have reached the limit of max {1} {2}." },
+            { "SpecificRestrictionInfo", "You have placed {0}/{1} {2}." },
+        };
 
         private void OnLevelLoaded(int level)
         {
@@ -141,6 +157,12 @@ namespace RestoreMonarchy.BuildingRestrictions
             }
 
             UnturnedPlayer unturnedPlayer = UnturnedPlayer.FromPlayer(player);
+
+            if (unturnedPlayer.IsAdmin)
+            {
+                return;
+            }
+
             decimal multiplier = GetPlayerBuildingsMultiplier(unturnedPlayer);
             PlayerBuildings playerBuildings = Database.GetPlayerBuildings(owner);
 
@@ -148,31 +170,134 @@ namespace RestoreMonarchy.BuildingRestrictions
             int barricadesCount = playerBuildings.Barricades.Count;
             int itemIdCount = playerBuildings.Barricades.Count(x => x.ItemId == barricade.asset.id);
             int buildCount = playerBuildings.Barricades.Count(x => x.Build == barricade.asset.build);
+            string itemName = barricade.asset.itemName;
+
+            int maxBuildings = (int)(Configuration.Instance.MaxBuildings * multiplier);
+            int maxBarricades = (int)(Configuration.Instance.MaxBarricades * multiplier);
 
             if (Configuration.Instance.MaxBuildings * multiplier <= buildingsCount)
             {
-
+                SendMessageToPlayer(unturnedPlayer, "BuildingsRestriction", itemName, maxBuildings);
                 shouldAllow = false;
                 return;
             }
 
             if (Configuration.Instance.MaxBarricades * multiplier <= barricadesCount)
             {
-
+                SendMessageToPlayer(unturnedPlayer, "BarricadesRestriction", itemName, maxBarricades);
                 shouldAllow = false;
                 return;
             }
 
-            BuildingRestriction itemIdRestriction = Configuration.Instance.Barricades.FirstOrDefault(x => x.ItemId == barricade.asset.id);
+            BuildingRestriction itemIdRestriction = Configuration.Instance.Barricades.FirstOrDefault(x => x.ItemId != 0 && x.ItemId == barricade.asset.id);
             if (itemIdRestriction != null)
             {
-                if (itemIdRestriction.Max <= )
+                int max = (int)(itemIdRestriction.Max * multiplier);
+                if (max <= itemIdCount)
                 {
-
+                    SendMessageToPlayer(unturnedPlayer, "SpecificRestriction", itemName, max, itemIdRestriction.Name);
+                    shouldAllow = false;
+                } else
+                {
+                    SendMessageToPlayer(unturnedPlayer, "SpecificRestrictionInfo", itemIdCount, max, itemIdRestriction.Name);
                 }
+                return;
             }
 
+            BuildingRestriction buildRestriction = Configuration.Instance.Barricades.FirstOrDefault(x => x.Build != null && x.Build.Equals(barricade.asset.build.ToString()));
+            if (buildRestriction != null)
+            {
+                int max = (int)(buildRestriction.Max * multiplier);
+                if (buildRestriction.Max <= buildCount)
+                {
+                    SendMessageToPlayer(unturnedPlayer, "SpecificRestriction", itemName, max, buildRestriction.Name);
+                    shouldAllow = false;
+                }
+                else
+                {
+                    SendMessageToPlayer(unturnedPlayer, "SpecificRestrictionInfo", buildCount, max, buildRestriction.Name);
+                }
+                return;
+            }
+        }
 
+        private void OnDeployStructureRequested(Structure structure, ItemStructureAsset asset, ref UnityEngine.Vector3 point, ref float angle_x, ref float angle_y, ref float angle_z, ref ulong owner, ref ulong group, ref bool shouldAllow)
+        {
+            if (!shouldAllow)
+            {
+                return;
+            }
+
+            CSteamID steamID = new(owner);
+            Player player = PlayerTool.getPlayer(steamID);
+            if (player == null)
+            {
+                return;
+            }
+
+            UnturnedPlayer unturnedPlayer = UnturnedPlayer.FromPlayer(player);
+
+            if (unturnedPlayer.IsAdmin)
+            {
+                return;
+            }
+
+            decimal multiplier = GetPlayerBuildingsMultiplier(unturnedPlayer);
+            PlayerBuildings playerBuildings = Database.GetPlayerBuildings(owner);
+
+            int buildingsCount = (playerBuildings.Structures.Count + playerBuildings.Structures.Count);
+            int structuresCount = playerBuildings.Structures.Count;
+            int itemIdCount = playerBuildings.Structures.Count(x => x.ItemId == structure.asset.id);
+            int constructCount = playerBuildings.Structures.Count(x => x.Construct == structure.asset.construct);
+            string itemName = structure.asset.itemName;
+
+            int maxBuildings = (int)(Configuration.Instance.MaxBuildings * multiplier);
+            int maxStructures = (int)(Configuration.Instance.MaxStructures * multiplier);
+
+            if (Configuration.Instance.MaxBuildings * multiplier <= buildingsCount)
+            {
+                SendMessageToPlayer(unturnedPlayer, "BuildingsRestriction", itemName, maxBuildings);
+                shouldAllow = false;
+                return;
+            }
+
+            if (Configuration.Instance.MaxStructures * multiplier <= structuresCount)
+            {
+                SendMessageToPlayer(unturnedPlayer, "StructuresRestriction", itemName, maxStructures);
+                shouldAllow = false;
+                return;
+            }
+
+            BuildingRestriction itemIdRestriction = Configuration.Instance.Structures.FirstOrDefault(x => x.ItemId != 0 && x.ItemId == structure.asset.id);
+            if (itemIdRestriction != null)
+            {
+                int max = (int)(itemIdRestriction.Max * multiplier);
+                if (max <= itemIdCount)
+                {
+                    SendMessageToPlayer(unturnedPlayer, "SpecificRestriction", itemName, max, itemIdRestriction.Name);
+                    shouldAllow = false;
+                } else
+                {
+                    SendMessageToPlayer(unturnedPlayer, "SpecificRestrictionInfo", itemIdCount, max, itemIdRestriction.Name);
+                }
+                return;
+            }
+
+            BuildingRestriction buildRestriction = Configuration.Instance.Structures.FirstOrDefault(x => x.Construct != null && x.Construct.Equals(structure.asset.construct.ToString()));
+            if (buildRestriction != null)
+            {
+                int max = (int)(buildRestriction.Max * multiplier);
+                if (buildRestriction.Max <= constructCount)
+                {
+                    SendMessageToPlayer(unturnedPlayer, "SpecificRestriction", itemName, max, buildRestriction.Name);
+                    shouldAllow = false;
+                }
+                else
+                {
+                    SendMessageToPlayer(unturnedPlayer, "SpecificRestrictionInfo", constructCount, max, buildRestriction.Name);
+                }
+                return;
+            }
         }
 
         private void OnBarricadeSpawned(BarricadeRegion region, BarricadeDrop drop)
@@ -197,6 +322,12 @@ namespace RestoreMonarchy.BuildingRestrictions
                 Transform = drop.model
             };
             Database.AddPlayerStructure(structureData.owner, playerStructure);
+        }
+
+        internal void SendMessageToPlayer(IRocketPlayer player, string translationKey, params object[] placeholder)
+        {
+            string message = Translate(translationKey, placeholder);
+            UnturnedChat.Say(player, message, MessageColor, true);
         }
     }
 }

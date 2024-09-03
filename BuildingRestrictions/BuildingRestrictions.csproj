@@ -12,8 +12,4 @@
     <PackageReference Include="RestoreMonarchy.RocketRedist" Version="3.24.5.1" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Commands\" />
-  </ItemGroup>
-
 </Project>
