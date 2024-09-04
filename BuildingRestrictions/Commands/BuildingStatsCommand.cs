@@ -31,6 +31,7 @@ namespace RestoreMonarchy.BuildingRestrictions.Commands
 
             ulong steamId = 0;
             string playerName = null;
+            UnturnedPlayer player = null;
             if (command.Length > 0)
             {
                 if (!caller.HasPermission("buildingstats.other"))
@@ -41,7 +42,7 @@ namespace RestoreMonarchy.BuildingRestrictions.Commands
 
                 string playerNameOrSteamId = command[0];
 
-                UnturnedPlayer player = UnturnedPlayer.FromName(playerNameOrSteamId);
+                player = UnturnedPlayer.FromName(playerNameOrSteamId);
                 if (player != null)
                 {
                     steamId = player.CSteamID.m_SteamID;
@@ -58,7 +59,7 @@ namespace RestoreMonarchy.BuildingRestrictions.Commands
                 }
             } else
             {
-                UnturnedPlayer player = (UnturnedPlayer)caller;
+                player = (UnturnedPlayer)caller;
                 steamId = player.CSteamID.m_SteamID;
             }
 
@@ -68,10 +69,10 @@ namespace RestoreMonarchy.BuildingRestrictions.Commands
             structuresCount = playerBuildingStats.StructuresCount.ToString("N0");
             barricadesCount = playerBuildingStats.BarricadesCount.ToString("N0");
 
-            decimal multiplier = pluginInstance.GetPlayerBuildingsMultiplier(new RocketPlayer(steamId.ToString()));
-            string buildingsLimit = configuration.EnableMaxBuildings ? $"/{configuration.MaxBuildings * multiplier:N0}" : "";
-            string structuresLimit = configuration.EnableMaxStructures ? $"/{configuration.MaxStructures * multiplier:N0}" : "";
-            string barricadesLimit = configuration.EnableMaxBarricades ? $"/{configuration.MaxBarricades * multiplier:N0}" : "";
+            decimal multiplier = pluginInstance.GetPlayerBuildingsMultiplier((IRocketPlayer)player ?? new RocketPlayer(steamId.ToString()));
+            string buildingsLimit = configuration.EnableMaxBuildings ? $"/{(int)(configuration.MaxBuildings * multiplier):N0}" : "";
+            string structuresLimit = configuration.EnableMaxStructures ? $"/{(int)(configuration.MaxStructures * multiplier):N0}" : "";
+            string barricadesLimit = configuration.EnableMaxBarricades ? $"/{(int)(configuration.MaxBarricades * multiplier):N0}" : "";
 
             if (caller.Id == steamId.ToString())
             {

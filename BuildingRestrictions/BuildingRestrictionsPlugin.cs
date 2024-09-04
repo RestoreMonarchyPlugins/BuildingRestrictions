@@ -127,7 +127,7 @@ namespace RestoreMonarchy.BuildingRestrictions
             BuildingStats stats = Database.GetBuildingStats();
             stopwatch.Stop();
             double seconds = Math.Round(stopwatch.Elapsed.TotalSeconds, 2);
-            LogDebug($"Loading {stats.BuildingsCount} buildings took {seconds:N2} seconds.");
+            LogDebug($"Loading {stats.BuildingsCount:N0} buildings took {seconds:N2} seconds.");
         }
 
         private void LogDebug(string message)
@@ -180,16 +180,16 @@ namespace RestoreMonarchy.BuildingRestrictions
             decimal multiplier = GetPlayerBuildingsMultiplier(unturnedPlayer);
             PlayerBuildings playerBuildings = Database.GetPlayerBuildings(owner);
 
-            int itemIdCount = playerBuildings.Barricades.Count(x => x.ItemId == barricade.asset.id);
-            int buildCount = playerBuildings.Barricades.Count(x => x.Build == barricade.asset.build);
+            int itemIdCount = playerBuildings?.Barricades.Count(x => x.ItemId == barricade.asset.id) ?? 0;
+            int buildCount = playerBuildings?.Barricades.Count(x => x.Build == barricade.asset.build) ?? 0;
             string itemName = barricade.asset.itemName;
 
             if (Configuration.Instance.EnableMaxBuildings)
             {
-                int buildingsCount = (playerBuildings.Barricades.Count + playerBuildings.Structures.Count);
+                int buildingsCount = (playerBuildings?.Barricades.Count ?? 0) + (playerBuildings?.Structures.Count ?? 0);
                 int maxBuildings = (int)(Configuration.Instance.MaxBuildings * multiplier);
 
-                if (Configuration.Instance.MaxBuildings * multiplier <= buildingsCount)
+                if (maxBuildings <= buildingsCount)
                 {
                     SendMessageToPlayer(unturnedPlayer, "BuildingsRestriction", itemName, maxBuildings);
                     shouldAllow = false;
@@ -199,10 +199,10 @@ namespace RestoreMonarchy.BuildingRestrictions
             
             if (Configuration.Instance.EnableMaxBarricades)
             {
-                int barricadesCount = playerBuildings.Barricades.Count;
+                int barricadesCount = playerBuildings?.Barricades.Count ?? 0;
                 int maxBarricades = (int)(Configuration.Instance.MaxBarricades * multiplier);
 
-                if (Configuration.Instance.MaxBarricades * multiplier <= barricadesCount)
+                if (maxBarricades <= barricadesCount)
                 {
                     SendMessageToPlayer(unturnedPlayer, "BarricadesRestriction", itemName, maxBarricades);
                     shouldAllow = false;
@@ -220,7 +220,7 @@ namespace RestoreMonarchy.BuildingRestrictions
                     shouldAllow = false;
                 } else
                 {
-                    SendMessageToPlayer(unturnedPlayer, "SpecificRestrictionInfo", itemIdCount, max, itemIdRestriction.Name);
+                    SendMessageToPlayer(unturnedPlayer, "SpecificRestrictionInfo", itemIdCount + 1, max, itemIdRestriction.Name);
                 }
                 return;
             }
@@ -229,14 +229,14 @@ namespace RestoreMonarchy.BuildingRestrictions
             if (buildRestriction != null)
             {
                 int max = (int)(buildRestriction.Max * multiplier);
-                if (buildRestriction.Max <= buildCount)
+                if (max <= buildCount)
                 {
                     SendMessageToPlayer(unturnedPlayer, "SpecificRestriction", itemName, max, buildRestriction.Name);
                     shouldAllow = false;
                 }
                 else
                 {
-                    SendMessageToPlayer(unturnedPlayer, "SpecificRestrictionInfo", buildCount, max, buildRestriction.Name);
+                    SendMessageToPlayer(unturnedPlayer, "SpecificRestrictionInfo", buildCount + 1, max, buildRestriction.Name);
                 }
                 return;
             }
@@ -266,16 +266,14 @@ namespace RestoreMonarchy.BuildingRestrictions
             decimal multiplier = GetPlayerBuildingsMultiplier(unturnedPlayer);
             PlayerBuildings playerBuildings = Database.GetPlayerBuildings(owner);
 
-            int itemIdCount = playerBuildings.Structures.Count(x => x.ItemId == structure.asset.id);
-            int constructCount = playerBuildings.Structures.Count(x => x.Construct == structure.asset.construct);
             string itemName = structure.asset.itemName;
 
             if (Configuration.Instance.EnableMaxBuildings)
             {
-                int buildingsCount = (playerBuildings.Structures.Count + playerBuildings.Structures.Count);
+                int buildingsCount = ((playerBuildings.Structures?.Count ?? 0) + (playerBuildings?.Barricades.Count ?? 0));
                 int maxBuildings = (int)(Configuration.Instance.MaxBuildings * multiplier);
 
-                if (Configuration.Instance.MaxBuildings * multiplier <= buildingsCount)
+                if (maxBuildings <= buildingsCount)
                 {
                     SendMessageToPlayer(unturnedPlayer, "BuildingsRestriction", itemName, maxBuildings);
                     shouldAllow = false;
@@ -285,16 +283,19 @@ namespace RestoreMonarchy.BuildingRestrictions
 
             if (Configuration.Instance.EnableMaxStructures)
             {
-                int structuresCount = playerBuildings.Structures.Count;
+                int structuresCount = playerBuildings?.Structures.Count ?? 0;
                 int maxStructures = (int)(Configuration.Instance.MaxStructures * multiplier);
 
-                if (Configuration.Instance.MaxStructures * multiplier <= structuresCount)
+                if (maxStructures <= structuresCount)
                 {
                     SendMessageToPlayer(unturnedPlayer, "StructuresRestriction", itemName, maxStructures);
                     shouldAllow = false;
                     return;
                 }
             }
+
+            int itemIdCount = playerBuildings?.Structures.Count(x => x.ItemId == structure.asset.id) ?? 0;
+            int constructCount = playerBuildings?.Structures.Count(x => x.Construct == structure.asset.construct) ?? 0;
 
             BuildingRestriction itemIdRestriction = Configuration.Instance.Structures.FirstOrDefault(x => x.ItemId != 0 && x.ItemId == structure.asset.id);
             if (itemIdRestriction != null)
@@ -311,18 +312,18 @@ namespace RestoreMonarchy.BuildingRestrictions
                 return;
             }
 
-            BuildingRestriction buildRestriction = Configuration.Instance.Structures.FirstOrDefault(x => x.Construct != null && x.Construct.Equals(structure.asset.construct.ToString()));
-            if (buildRestriction != null)
+            BuildingRestriction structRestriction = Configuration.Instance.Structures.FirstOrDefault(x => x.Construct != null && x.Construct.Equals(structure.asset.construct.ToString(), StringComparison.CurrentCultureIgnoreCase));
+            if (structRestriction != null)
             {
-                int max = (int)(buildRestriction.Max * multiplier);
-                if (buildRestriction.Max <= constructCount)
+                int max = (int)(structRestriction.Max * multiplier);
+                if (max <= constructCount)
                 {
-                    SendMessageToPlayer(unturnedPlayer, "SpecificRestriction", itemName, max, buildRestriction.Name);
+                    SendMessageToPlayer(unturnedPlayer, "SpecificRestriction", itemName, max, structRestriction.Name);
                     shouldAllow = false;
                 }
                 else
                 {
-                    SendMessageToPlayer(unturnedPlayer, "SpecificRestrictionInfo", constructCount + 1, max, buildRestriction.Name);
+                    SendMessageToPlayer(unturnedPlayer, "SpecificRestrictionInfo", constructCount + 1, max, structRestriction.Name);
                 }
                 return;
             }
