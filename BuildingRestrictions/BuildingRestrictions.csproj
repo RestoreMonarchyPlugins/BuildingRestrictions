@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="Lib.Harmony" Version="2.3.3" />
-    <PackageReference Include="RestoreMonarchy.RocketRedist" Version="3.24.5.1" />
+    <PackageReference Include="RestoreMonarchy.RocketRedist" Version="3.24.5.1" ExcludeAssets="runtime" />
   </ItemGroup>
 
 </Project>
