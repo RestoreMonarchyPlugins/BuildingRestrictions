@@ -11,6 +11,19 @@ Set the limits for the number of buildings the player can build.
 <Permission Cooldown="0">buildingstats.other</Permission>
 ```
 
+## List of Barricade Build types
+FORTIFICATION, BARRICADE, DOOR, GATE, BED, LADDER, STORAGE, FARM, TORCH, CAMPFIRE, SPIKE, WIRE, GENERATOR, SPOT, SAFEZONE, FREEFORM, SIGN, VEHICLE, CLAIM, BEACON, STORAGE_WALL, BARREL_RAIN, OIL, CAGE, SHUTTER, TANK, CHARGE, SENTRY, SENTRY_FREEFORM, OVEN, LIBRARY, OXYGENATOR, GLASS, NOTE, HATCH, MANNEQUIN, STEREO, SIGN_WALL, CLOCK, BARRICADE_WALL
+
+## List of Structure Construct types
+- FLOOR
+- WALL
+- RAMPART
+- ROOF
+- PILLAR
+- POST
+- FLOOR_POLY
+- ROOF_POLY
+
 ## Configuration
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
