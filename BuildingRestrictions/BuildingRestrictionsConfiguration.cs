@@ -18,6 +18,11 @@ namespace RestoreMonarchy.BuildingRestrictions
         public int MaxStructures { get; set; }
         public bool BypassAdmin { get; set; }
 
+        public bool EnableMaxBarricadeHeight { get; set; } = false;
+        public float MaxBarricadeHeight { get; set; } = 100;
+        public bool EnableMaxStructureHeight { get; set; } = false;
+        public float MaxStructureHeight { get; set; } = 100;
+
         [XmlArrayItem("Barricade")]
         public BuildingRestriction[] Barricades { get; set; }
         [XmlArrayItem("Structure")]
@@ -36,6 +41,12 @@ namespace RestoreMonarchy.BuildingRestrictions
             EnableMaxStructures = false;
             MaxStructures = 150;
             BypassAdmin = false;
+
+            EnableMaxBarricadeHeight = false;
+            MaxBarricadeHeight = 100;
+            EnableMaxStructureHeight = false;
+            MaxStructureHeight = 100;
+
             Barricades =
             [
                 new("sentries", 0, EBuild.SENTRY.ToString(), null, 5),

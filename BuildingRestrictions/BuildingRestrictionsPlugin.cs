@@ -76,7 +76,9 @@ namespace RestoreMonarchy.BuildingRestrictions
             { "PlayerBuildingStats", "{0} have placed {1}{2} barricades and {3}{4} structures, so in total {5}{6} buildings." },
             { "BuildingStats", "{0} players have built {1} barricades and {2} structures, so in total {3} buildings." },            
             { "PlayerNotFound", "Player {0} not found." },
-            { "BuildingStatsOtherNoPermission", "You don't have permission to check other player building stats." }
+            { "BuildingStatsOtherNoPermission", "You don't have permission to check other player building stats." },
+            { "MaxBarricadeHeightRestriction", "You can't build {0} because it's higher than max {1}m height above the ground." },
+            { "MaxStructureHeightRestriction", "You can't build {0} because it's higher than max {1}m height above the ground." }
         };
 
         private void OnLevelLoaded(int level)
@@ -177,6 +179,15 @@ namespace RestoreMonarchy.BuildingRestrictions
                 return;
             }
 
+            float groundHeight = LevelGround.getHeight(point);
+            float barricadeHeight = point.y - groundHeight;
+            if (Configuration.Instance.EnableMaxBarricadeHeight && barricadeHeight > Configuration.Instance.MaxBarricadeHeight)
+            {
+                SendMessageToPlayer(unturnedPlayer, "MaxBarricadeHeightRestriction", asset.itemName, Configuration.Instance.MaxBarricadeHeight.ToString("N0"));
+                shouldAllow = false;
+                return;
+            }
+
             decimal multiplier = GetPlayerBuildingsMultiplier(unturnedPlayer);
             PlayerBuildings playerBuildings = Database.GetPlayerBuildings(owner);
 
@@ -260,6 +271,15 @@ namespace RestoreMonarchy.BuildingRestrictions
 
             if (Configuration.Instance.BypassAdmin && unturnedPlayer.IsAdmin)
             {
+                return;
+            }
+
+            float groundHeight = LevelGround.getHeight(point);
+            float structureHeight = point.y - groundHeight;
+            if (Configuration.Instance.EnableMaxStructureHeight && structureHeight > Configuration.Instance.MaxStructureHeight)
+            {
+                SendMessageToPlayer(unturnedPlayer, "MaxStructureHeightRestriction", asset.itemName, Configuration.Instance.MaxStructureHeight.ToString("N0"));
+                shouldAllow = false;
                 return;
             }
 

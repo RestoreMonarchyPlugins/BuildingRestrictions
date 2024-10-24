@@ -36,6 +36,10 @@ FORTIFICATION, BARRICADE, DOOR, GATE, BED, LADDER, STORAGE, FARM, TORCH, CAMPFIR
   <EnableMaxStructures>false</EnableMaxStructures>
   <MaxStructures>150</MaxStructures>
   <BypassAdmin>false</BypassAdmin>
+  <EnableMaxBarricadeHeight>false</EnableMaxBarricadeHeight>
+  <MaxBarricadeHeight>100</MaxBarricadeHeight>
+  <EnableMaxStructureHeight>false</EnableMaxStructureHeight>
+  <MaxStructureHeight>100</MaxStructureHeight>
   <Barricades>
     <Barricade Name="sentries" Build="SENTRY" Max="5" />
     <Barricade Name="stereos" Build="STEREO" Max="1" />
@@ -65,5 +69,7 @@ FORTIFICATION, BARRICADE, DOOR, GATE, BED, LADDER, STORAGE, FARM, TORCH, CAMPFIR
   <Translation Id="BuildingStats" Value="{0} players have built {1} barricades and {2} structures, so in total {3} buildings." />
   <Translation Id="PlayerNotFound" Value="Player {0} not found." />
   <Translation Id="BuildingStatsOtherNoPermission" Value="You don't have permission to check other player building stats." />
+  <Translation Id="MaxBarricadeHeightRestriction" Value="You can't build {0} because it's higher than max {1}m height above the ground." />
+  <Translation Id="MaxStructureHeightRestriction" Value="You can't build {0} because it's higher than max {1}m height above the ground." />
 </Translations>
 ```
