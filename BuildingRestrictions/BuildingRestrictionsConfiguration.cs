@@ -10,6 +10,7 @@ namespace RestoreMonarchy.BuildingRestrictions
         public bool Debug { get; set; }
         public bool ShouldSerializeDebug() => Debug;
         public string MessageColor { get; set; }
+        public string MessageIconUrl { get; set; }
         public bool EnableMaxBuildings { get; set; }
         public int MaxBuildings { get; set; }
         public bool EnableMaxBarricades { get; set; }
@@ -24,16 +25,17 @@ namespace RestoreMonarchy.BuildingRestrictions
         public float MaxStructureHeight { get; set; } = 100;
 
         [XmlArrayItem("Barricade")]
-        public BuildingRestriction[] Barricades { get; set; }
+        public BuildingRestriction[] Barricades { get; set; } = [];
         [XmlArrayItem("Structure")]
-        public BuildingRestriction[] Structures { get; set; }
+        public BuildingRestriction[] Structures { get; set; } = [];
         [XmlArrayItem("Multiplier")]
-        public PermissionMultiplier[] Multipliers { get; set; }
+        public PermissionMultiplier[] Multipliers { get; set; } = [];
 
         public void LoadDefaults()
         {
             Debug = false;
             MessageColor = "yellow";
+            MessageIconUrl = "https://i.imgur.com/LlEcfBg.png";
             EnableMaxBuildings = false;
             MaxBuildings = 200;
             EnableMaxBarricades = false;
