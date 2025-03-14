@@ -11,18 +11,32 @@ Set the limits for the number of buildings the player can build.
 <Permission Cooldown="0">buildingstats.other</Permission>
 ```
 
-## List of Barricade Build types
+## Barricade Build types
+```
 FORTIFICATION, BARRICADE, DOOR, GATE, BED, LADDER, STORAGE, FARM, TORCH, CAMPFIRE, SPIKE, WIRE, GENERATOR, SPOT, SAFEZONE, FREEFORM, SIGN, VEHICLE, CLAIM, BEACON, STORAGE_WALL, BARREL_RAIN, OIL, CAGE, SHUTTER, TANK, CHARGE, SENTRY, SENTRY_FREEFORM, OVEN, LIBRARY, OXYGENATOR, GLASS, NOTE, HATCH, MANNEQUIN, STEREO, SIGN_WALL, CLOCK, BARRICADE_WALL
+```
 
-## List of Structure Construct types
-- FLOOR
-- WALL
-- RAMPART
-- ROOF
-- PILLAR
-- POST
-- FLOOR_POLY
-- ROOF_POLY
+## Structure Construct types
+```
+FLOOR, WALL, RAMPART, ROOF, PILLAR, POST, FLOOR_POLY, ROOF_POLY
+```
+
+## Location restrictions
+Location is considered a rectangle where the zombies can spawn and walk. It is the equalivent of navigations in Unturned map editor.
+```xml
+<EnableMaxBuildingsPerLocation>false</EnableMaxBuildingsPerLocation>
+<MaxBuildingsPerLocationHeight>100</MaxBuildingsPerLocationHeight>
+<MaxBuildingsPerLocation>10</MaxBuildingsPerLocation>
+```
+The `MaxBuildingsPerLocationHeight` is the height above the ground where the building is considered to be in the location. 
+
+If you want to completely disable building in the locations, set `MaxBuildingPerLocation` to `0`.
+
+The following barricades are not considered for the location restrictions:
+- Safezone Radiators
+- Horde Beacons
+- Charges
+- Vehicles (which can be built)
 
 ## Configuration
 ```xml
@@ -41,6 +55,9 @@ FORTIFICATION, BARRICADE, DOOR, GATE, BED, LADDER, STORAGE, FARM, TORCH, CAMPFIR
   <MaxBarricadeHeight>100</MaxBarricadeHeight>
   <EnableMaxStructureHeight>false</EnableMaxStructureHeight>
   <MaxStructureHeight>100</MaxStructureHeight>
+  <EnableMaxBuildingsPerLocation>false</EnableMaxBuildingsPerLocation>
+  <MaxBuildingsPerLocationHeight>100</MaxBuildingsPerLocationHeight>
+  <MaxBuildingsPerLocation>10</MaxBuildingsPerLocation>
   <Barricades>
     <Barricade Name="sentries" Build="SENTRY" Max="5" />
     <Barricade Name="stereos" Build="STEREO" Max="1" />

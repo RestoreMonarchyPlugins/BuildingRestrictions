@@ -24,6 +24,10 @@ namespace RestoreMonarchy.BuildingRestrictions
         public bool EnableMaxStructureHeight { get; set; } = false;
         public float MaxStructureHeight { get; set; } = 100;
 
+        public bool EnableMaxBuildingsPerLocation { get; set; } = false;
+        public float MaxBuildingsPerLocationHeight { get; set; } = 100;
+        public int MaxBuildingsPerLocation { get; set; } = 10;
+
         [XmlArrayItem("Barricade")]
         public BuildingRestriction[] Barricades { get; set; } = [];
         [XmlArrayItem("Structure")]
@@ -48,6 +52,10 @@ namespace RestoreMonarchy.BuildingRestrictions
             MaxBarricadeHeight = 100;
             EnableMaxStructureHeight = false;
             MaxStructureHeight = 100;
+
+            EnableMaxBuildingsPerLocation = false;
+            MaxBuildingsPerLocationHeight = 100;
+            MaxBuildingsPerLocation = 10;
 
             Barricades =
             [

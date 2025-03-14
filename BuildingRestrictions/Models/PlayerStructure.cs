@@ -8,5 +8,7 @@ namespace RestoreMonarchy.BuildingRestrictions.Models
         public ushort ItemId { get; set; }
         public EConstruct Construct { get; set; }
         public Transform Transform { get; set; }
+        public bool IsInBound { get; set; }
+        public byte BoundIndex { get; set; }
     }
 }

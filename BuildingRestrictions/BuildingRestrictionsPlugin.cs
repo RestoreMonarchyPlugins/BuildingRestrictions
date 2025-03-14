@@ -13,7 +13,10 @@ using Steamworks;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing.Text;
 using System.Linq;
+using UnityEngine;
+using Logger = Rocket.Core.Logging.Logger;
 
 namespace RestoreMonarchy.BuildingRestrictions
 {
@@ -78,7 +81,10 @@ namespace RestoreMonarchy.BuildingRestrictions
             { "PlayerNotFound", "Player [[b]]{0}[[/b]] not found." },
             { "BuildingStatsOtherNoPermission", "You don't have permission to check other player building stats." },
             { "MaxBarricadeHeightRestriction", "You can't build [[b]]{0}[[/b]] because it's higher than max [[b]]{1}m[[/b]] height above the ground." },
-            { "MaxStructureHeightRestriction", "You can't build [[b]]{0}[[/b]] because it's higher than max [[b]]{1}m[[/b]] height above the ground." }
+            { "MaxStructureHeightRestriction", "You can't build [[b]]{0}[[/b]] because it's higher than max [[b]]{1}m[[/b]] height above the ground." },
+            { "BuildingsInLocationRestriction", "You can't build [[b]]{0}[[/b]] here because you have reached the limit of max [[b]]{1}[[/b]] buildings in this location." },
+            { "BuildingsInLocationRestrictionNone", "You can't build in this location." },
+            { "BuildingsInLocationRestrictionInfo", "You have built [[b]]{0}/{1}[[/b]] buildings in this location." }
         };
 
         private void OnLevelLoaded(int level)
@@ -100,8 +106,11 @@ namespace RestoreMonarchy.BuildingRestrictions
                     {
                         ItemId = drop.asset.id,
                         Build = drop.asset.build,
-                        Transform = drop.model
+                        Transform = drop.model,
+                        IsInBound = TryGetBoundsWithHeight(drop.model.position, out byte boundIndex),
+                        BoundIndex = boundIndex
                     };
+
                     BarricadeData data = drop.GetServersideData();
                     Database.AddPlayerBarricade(data.owner, playerBarricade);
                 }
@@ -119,8 +128,11 @@ namespace RestoreMonarchy.BuildingRestrictions
                     {
                         ItemId = drop.asset.id,
                         Construct = drop.asset.construct,
-                        Transform = drop.model
+                        Transform = drop.model,
+                        IsInBound = TryGetBoundsWithHeight(drop.model.position, out byte boundIndex),
+                        BoundIndex = boundIndex
                     };
+
                     StructureData data = drop.GetServersideData();
                     Database.AddPlayerStructure(data.owner, playerStructure);
                 }
@@ -158,7 +170,7 @@ namespace RestoreMonarchy.BuildingRestrictions
             return multiplier;
         }
 
-        private void OnDeployBarricadeRequested(Barricade barricade, ItemBarricadeAsset asset, UnityEngine.Transform hit, ref UnityEngine.Vector3 point, ref float angle_x, ref float angle_y, ref float angle_z, ref ulong owner, ref ulong group, ref bool shouldAllow)
+        private void OnDeployBarricadeRequested(Barricade barricade, ItemBarricadeAsset asset, Transform hit, ref Vector3 point, ref float angle_x, ref float angle_y, ref float angle_z, ref ulong owner, ref ulong group, ref bool shouldAllow)
         {
             if (!shouldAllow)
             {
@@ -219,6 +231,34 @@ namespace RestoreMonarchy.BuildingRestrictions
                 }
             }
 
+            System.Action action = null;
+            if (Configuration.Instance.EnableMaxBuildingsPerLocation && TryGetBoundsWithHeight(point, out byte boundIndex) 
+                && asset.build != EBuild.BEACON && asset.build != EBuild.VEHICLE && asset.build != EBuild.CHARGE && asset.build != EBuild.SAFEZONE)
+            {
+                if (Configuration.Instance.MaxBuildingsPerLocation == 0)
+                {
+                    SendMessageToPlayer(unturnedPlayer, "BuildingsInLocationRestrictionNone");
+                    shouldAllow = false;
+                    return;
+                }
+
+                int barricadesCount = playerBuildings?.Barricades.Count(x => x.IsInBound && x.BoundIndex == boundIndex) ?? 0;
+                int structuresCount = playerBuildings?.Structures.Count(x => x.IsInBound && x.BoundIndex == boundIndex) ?? 0;
+                int buildingsCount = barricadesCount + structuresCount;
+
+                int maxBuildings = (int)(Configuration.Instance.MaxBuildingsPerLocation * multiplier);
+                if (maxBuildings <= buildingsCount)
+                {
+                    SendMessageToPlayer(unturnedPlayer, "BuildingsInLocationRestriction", itemName, maxBuildings);
+                    shouldAllow = false;
+                    return;
+                }
+                else
+                {
+                    action = () => SendMessageToPlayer(unturnedPlayer, "BuildingsInLocationRestrictionInfo", buildingsCount + 1, maxBuildings);
+                }
+            }
+
             if (Configuration.Instance.Barricades != null && Configuration.Instance.Barricades.Any())
             {
                 int itemIdCount = playerBuildings?.Barricades.Count(x => x.ItemId == barricade.asset.id) ?? 0;
@@ -255,6 +295,11 @@ namespace RestoreMonarchy.BuildingRestrictions
                     }
                     return;
                 }
+            }
+
+            if (action != null)
+            {
+                action();
             }
         }
 
@@ -319,6 +364,33 @@ namespace RestoreMonarchy.BuildingRestrictions
                 }
             }
 
+            System.Action action = null;
+            if (Configuration.Instance.EnableMaxBuildingsPerLocation && TryGetBoundsWithHeight(point, out byte boundIndex))
+            {
+                if (Configuration.Instance.MaxBuildingsPerLocation == 0)
+                {
+                    SendMessageToPlayer(unturnedPlayer, "BuildingsInLocationRestrictionNone");
+                    shouldAllow = false;
+                    return;
+                }
+
+                int barricadesCount = playerBuildings?.Barricades.Count(x => x.IsInBound && x.BoundIndex == boundIndex) ?? 0;
+                int structuresCount = playerBuildings?.Structures.Count(x => x.IsInBound && x.BoundIndex == boundIndex) ?? 0;
+                int buildingsCount = barricadesCount + structuresCount;
+
+                int maxBuildings = (int)(Configuration.Instance.MaxBuildingsPerLocation * multiplier);
+                if (maxBuildings <= buildingsCount)
+                {
+                    SendMessageToPlayer(unturnedPlayer, "BuildingsInLocationRestriction", itemName, maxBuildings);
+                    shouldAllow = false;
+                    return;
+                }
+                else
+                {
+                    action = () => SendMessageToPlayer(unturnedPlayer, "BuildingsInLocationRestrictionInfo", buildingsCount + 1, maxBuildings);
+                }
+            }
+
             if (Configuration.Instance.Structures != null && Configuration.Instance.Structures.Any())
             {
                 int itemIdCount = playerBuildings?.Structures.Count(x => x.ItemId == structure.asset.id) ?? 0;
@@ -356,6 +428,11 @@ namespace RestoreMonarchy.BuildingRestrictions
                     return;
                 }
             }
+
+            if (action != null)
+            {
+                action();
+            }
         }
 
         private void OnBarricadeSpawned(BarricadeRegion region, BarricadeDrop drop)
@@ -365,7 +442,9 @@ namespace RestoreMonarchy.BuildingRestrictions
             {
                 ItemId = drop.asset.id,
                 Build = drop.asset.build,
-                Transform = drop.model
+                Transform = drop.model,
+                IsInBound = TryGetBoundsWithHeight(drop.model.position, out byte boundIndex),
+                BoundIndex = boundIndex
             };
             Database.AddPlayerBarricade(barricadeData.owner, playerBarricade);
         }
@@ -377,9 +456,34 @@ namespace RestoreMonarchy.BuildingRestrictions
             {
                 ItemId = drop.asset.id,
                 Construct = drop.asset.construct,
-                Transform = drop.model
+                Transform = drop.model,
+                IsInBound = TryGetBoundsWithHeight(drop.model.position, out byte boundIndex),
+                BoundIndex = boundIndex
             };
             Database.AddPlayerStructure(structureData.owner, playerStructure);
+        }
+
+        public bool TryGetBoundsWithHeight(Vector3 position, out byte boundIndex)
+        {
+            if (LevelNavigation.tryGetBounds(position, out boundIndex))
+            {
+                Bounds bound = LevelNavigation.bounds[boundIndex];
+                if (IsInBoundsHeight(bound, position))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool IsInBoundsHeight(Bounds bound, Vector3 position)
+        {
+            float goundLevel = LevelGround.getHeight(position);
+            float buildingY = position.y;
+            float buildingHeight = buildingY - goundLevel;
+
+            return buildingHeight <= Configuration.Instance.MaxBuildingsPerLocationHeight;
         }
 
         internal void SendMessageToPlayer(IRocketPlayer player, string translationKey, params object[] placeholder)
