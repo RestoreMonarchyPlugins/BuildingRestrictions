@@ -1,93 +1,144 @@
 # Building Restrictions
-Set the limits for the number of buildings the player can build.
+
+A plugin that allows server admins to set limits on the number of buildings players can place in Unturned.
+
+## Features
+
+- Limit total buildings per player
+- Limit barricades and structures separately
+- Set specific limits for different building types
+- Height restrictions for buildings
+- Location-based building limits
+- Multipliers for players with special permissions
 
 ## Commands
-- `/buildingstats` - Shows player the number of buildings they have built and the limit.
-- `/buildingstats <player>` - Shows player the number of buildings the specified player has built and the limit. 
+
+- `/buildingstats` - Shows your current building counts and limits
+- `/buildingstats <player>` - Shows another player's building counts and limits (requires permission)
 
 ## Permissions
+
+- `buildingstats` - Allows using the `/buildingstats` command
+- `buildingstats.other` - Allows checking other players' building stats
+- `buildings.vip` - Example permission for multiplier (customizable)
+
+## Configuration
+
+### General Settings
+
 ```xml
-<Permission Cooldown="0">buildingstats</Permission>
-<Permission Cooldown="0">buildingstats.other</Permission>
+<MessageColor>yellow</MessageColor>
+<MessageIconUrl>https://i.imgur.com/LlEcfBg.png</MessageIconUrl>
+<EnableMaxBuildings>false</EnableMaxBuildings>
+<MaxBuildings>200</MaxBuildings>
+<EnableMaxBarricades>false</EnableMaxBarricades>
+<MaxBarricades>100</MaxBarricades>
+<EnableMaxStructures>false</EnableMaxStructures>
+<MaxStructures>150</MaxStructures>
+<BypassAdmin>false</BypassAdmin>
 ```
 
-## Barricade Build types
-```
-FORTIFICATION, BARRICADE, DOOR, GATE, BED, LADDER, STORAGE, FARM, TORCH, CAMPFIRE, SPIKE, WIRE, GENERATOR, SPOT, SAFEZONE, FREEFORM, SIGN, VEHICLE, CLAIM, BEACON, STORAGE_WALL, BARREL_RAIN, OIL, CAGE, SHUTTER, TANK, CHARGE, SENTRY, SENTRY_FREEFORM, OVEN, LIBRARY, OXYGENATOR, GLASS, NOTE, HATCH, MANNEQUIN, STEREO, SIGN_WALL, CLOCK, BARRICADE_WALL
+- `MessageColor` - Color of plugin messages
+- `MessageIconUrl` - Icon shown with messages
+- `EnableMaxBuildings` - Set to `true` to limit total buildings
+- `MaxBuildings` - Maximum total buildings allowed per player
+- `EnableMaxBarricades` - Set to `true` to limit barricades separately
+- `MaxBarricades` - Maximum barricades allowed per player
+- `EnableMaxStructures` - Set to `true` to limit structures separately
+- `MaxStructures` - Maximum structures allowed per player
+- `BypassAdmin` - Set to `true` to let admins ignore all restrictions
+
+### Height Restrictions
+
+```xml
+<EnableMaxBarricadeHeight>false</EnableMaxBarricadeHeight>
+<MaxBarricadeHeight>100</MaxBarricadeHeight>
+<EnableMaxStructureHeight>false</EnableMaxStructureHeight>
+<MaxStructureHeight>100</MaxStructureHeight>
 ```
 
-## Structure Construct types
-```
-FLOOR, WALL, RAMPART, ROOF, PILLAR, POST, FLOOR_POLY, ROOF_POLY
-```
+- `EnableMaxBarricadeHeight` - Set to `true` to limit barricade height
+- `MaxBarricadeHeight` - Maximum height (in meters) for barricades
+- `EnableMaxStructureHeight` - Set to `true` to limit structure height
+- `MaxStructureHeight` - Maximum height (in meters) for structures
 
-## Location restrictions
-Location is considered a rectangle where the zombies can spawn and walk. It is the equalivent of navigations in Unturned map editor.
+### Location Restrictions
+
 ```xml
 <EnableMaxBuildingsPerLocation>false</EnableMaxBuildingsPerLocation>
 <MaxBuildingsPerLocationHeight>100</MaxBuildingsPerLocationHeight>
 <MaxBuildingsPerLocation>10</MaxBuildingsPerLocation>
 ```
-The `MaxBuildingsPerLocationHeight` is the height above the ground where the building is considered to be in the location. 
 
-If you want to completely disable building in the locations, set `MaxBuildingPerLocation` to `0`.
+- `EnableMaxBuildingsPerLocation` - Set to `true` to limit buildings in specific areas
+- `MaxBuildingsPerLocationHeight` - Maximum height for location detection
+- `MaxBuildingsPerLocation` - Maximum buildings allowed in a location
+  - Set to `0` to completely disable building in locations
+  - The following aren't counted: Safezone Radiators, Horde Beacons, Charges, Vehicles
 
-The following barricades are not considered for the location restrictions:
-- Safezone Radiators
-- Horde Beacons
-- Charges
-- Vehicles (which can be built)
+### Specific Building Limits
 
-## Configuration
 ```xml
-<?xml version="1.0" encoding="utf-8"?>
-<BuildingRestrictionsConfiguration xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <MessageColor>yellow</MessageColor>
-  <MessageIconUrl>https://i.imgur.com/LlEcfBg.png</MessageIconUrl>
-  <EnableMaxBuildings>false</EnableMaxBuildings>
-  <MaxBuildings>200</MaxBuildings>
-  <EnableMaxBarricades>false</EnableMaxBarricades>
-  <MaxBarricades>100</MaxBarricades>
-  <EnableMaxStructures>false</EnableMaxStructures>
-  <MaxStructures>150</MaxStructures>
-  <BypassAdmin>false</BypassAdmin>
-  <EnableMaxBarricadeHeight>false</EnableMaxBarricadeHeight>
-  <MaxBarricadeHeight>100</MaxBarricadeHeight>
-  <EnableMaxStructureHeight>false</EnableMaxStructureHeight>
-  <MaxStructureHeight>100</MaxStructureHeight>
-  <EnableMaxBuildingsPerLocation>false</EnableMaxBuildingsPerLocation>
-  <MaxBuildingsPerLocationHeight>100</MaxBuildingsPerLocationHeight>
-  <MaxBuildingsPerLocation>10</MaxBuildingsPerLocation>
-  <Barricades>
-    <Barricade Name="sentries" Build="SENTRY" Max="5" />
-    <Barricade Name="stereos" Build="STEREO" Max="1" />
-    <Barricade Name="campfires" Build="CAMPFIRE" Max="2" />
-  </Barricades>
-  <Structures>
-    <Structure Name="roofs" Construct="ROOF" Max="30" />
-    <Structure Name="floors" Construct="FLOOR" Max="30" />
-  </Structures>
-  <Multipliers>
-    <Multiplier Permission="buildings.vip" Multiplier="1.5" />
-  </Multipliers>
-</BuildingRestrictionsConfiguration>
+<Barricades>
+  <Barricade Name="sentries" Build="SENTRY" Max="5" />
+  <Barricade Name="stereos" Build="STEREO" Max="1" />
+  <Barricade Name="campfires" Build="CAMPFIRE" Max="2" />
+  <Barricade Name="Sandbag" ItemId="365" Max="10" />
+</Barricades>
+<Structures>
+  <Structure Name="roofs" Construct="ROOF" Max="30" />
+  <Structure Name="floors" Construct="FLOOR" Max="30" />
+  <Structure Name="Metal Wall" ItemId="371" Max="20" />
+</Structures>
 ```
 
-## Translations
+- `Barricades` - List of specific barricade type restrictions
+- `Structures` - List of specific structure type restrictions
+- For each entry:
+  - `Name` - Display name for the building type (informational only, doesn't affect functionality)
+  - `Build` - Barricade type (use values from Barricade Build types list)
+  - `Construct` - Structure type (use values from Structure Construct types list)
+  - `ItemId` - Specific item ID (overrides Build/Construct)
+  - `Max` - Maximum number allowed
+
+#### Restriction Methods:
+You can restrict buildings in three ways:
+
+1. **By Building Category**: Use the `Build` attribute for barricades or `Construct` for structures to restrict entire categories (e.g., all SENTRY types).
+
+2. **By Specific Item ID**: Use the `ItemId` attribute to restrict a specific item. For example:
+   - `ItemId="365"` restricts Sandbag barricades specifically
+   - `ItemId="371"` restricts Metal Walls specifically
+   
+3. **Combined Restrictions**: You can have both category restrictions and specific item restrictions active at the same time.
+
+> **Note**: When using ItemId, you need to know the exact ID number of the item in Unturned. Using ItemId will override category-based restrictions for that specific item. The `Name` attribute is just for your reference and doesn't need to match the exact item name in Unturned.
+
+### Permission Multipliers
+
 ```xml
-<?xml version="1.0" encoding="utf-8"?>
-<Translations xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <Translation Id="BuildingsRestriction" Value="You can't build [[b]]{0}[[/b]] because you have reached the limit of max [[b]]{1}[[/b]] buildings." />
-  <Translation Id="BarricadesRestriction" Value="You can't build [[b]]{0}[[/b]] because you have reached the limit of max [[b]]{1}[[/b]] barricades." />
-  <Translation Id="StructuresRestriction" Value="You can't build [[b]]{0}[[/b]] because you have reached the limit of max [[b]]{1}[[/b]] structures." />
-  <Translation Id="SpecificRestriction" Value="You can't build [[b]]{0}[[/b]] because you have reached the limit of max [[b]]{1} {2}[[/b]]." />
-  <Translation Id="SpecificRestrictionInfo" Value="You have placed [[b]]{0}/{1} {2}[[/b]]." />
-  <Translation Id="PlayerBuildingStatsYou" Value="You have placed [[b]]{0}{1}[[/b]] barricades and [[b]]{2}{3}[[/b]] structures, so in total [[b]]{4}{5}[[/b]] buildings." />
-  <Translation Id="PlayerBuildingStats" Value="[[b]]{0}[[/b]] have placed [[b]]{1}{2}[[/b]] barricades and [[b]]{3}{4}[[/b]] structures, so in total [[b]]{5}{6}[[/b]] buildings." />
-  <Translation Id="BuildingStats" Value="[[b]]{0}[[/b]] players have built [[b]]{1}[[/b]] barricades and [[b]]{2}[[/b]] structures, so in total [[b]]{3}[[/b]] buildings." />
-  <Translation Id="PlayerNotFound" Value="Player [[b]]{0}[[/b]] not found." />
-  <Translation Id="BuildingStatsOtherNoPermission" Value="You don't have permission to check other player building stats." />
-  <Translation Id="MaxBarricadeHeightRestriction" Value="You can't build [[b]]{0}[[/b]] because it's higher than max [[b]]{1}m[[/b]] height above the ground." />
-  <Translation Id="MaxStructureHeightRestriction" Value="You can't build [[b]]{0}[[/b]] because it's higher than max [[b]]{1}m[[/b]] height above the ground." />
-</Translations>
+<Multipliers>
+  <Multiplier Permission="buildings.vip" Multiplier="1.5" />
+</Multipliers>
+```
+
+- Use multipliers to give certain players higher limits
+- `Permission` - The permission to check for
+- `Multiplier` - How much to multiply the limits (1.5 = +50%)
+
+## Building Types Reference
+
+### Barricade Types
+```
+FORTIFICATION, BARRICADE, DOOR, GATE, BED, LADDER, STORAGE, FARM, 
+TORCH, CAMPFIRE, SPIKE, WIRE, GENERATOR, SPOT, SAFEZONE, FREEFORM, 
+SIGN, VEHICLE, CLAIM, BEACON, STORAGE_WALL, BARREL_RAIN, OIL, CAGE, 
+SHUTTER, TANK, CHARGE, SENTRY, SENTRY_FREEFORM, OVEN, LIBRARY, 
+OXYGENATOR, GLASS, NOTE, HATCH, MANNEQUIN, STEREO, SIGN_WALL, 
+CLOCK, BARRICADE_WALL
+```
+
+### Structure Types
+```
+FLOOR, WALL, RAMPART, ROOF, PILLAR, POST, FLOOR_POLY, ROOF_POLY
 ```
