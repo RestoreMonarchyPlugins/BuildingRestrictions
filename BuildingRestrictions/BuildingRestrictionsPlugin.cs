@@ -232,8 +232,14 @@ namespace RestoreMonarchy.BuildingRestrictions
             }
 
             System.Action action = null;
-            if (Configuration.Instance.EnableMaxBuildingsPerLocation && TryGetBoundsWithHeight(point, out byte boundIndex) 
-                && asset.build != EBuild.BEACON && asset.build != EBuild.VEHICLE && asset.build != EBuild.CHARGE && asset.build != EBuild.SAFEZONE)
+            if (Configuration.Instance.EnableMaxBuildingsPerLocation 
+                && TryGetBoundsWithHeight(point, out byte boundIndex)
+                && (hit == null || !hit.transform.CompareTag("Vehicle"))
+                && asset.build != EBuild.BEACON 
+                && asset.build != EBuild.VEHICLE 
+                && asset.build != EBuild.CHARGE 
+                && asset.build != EBuild.SAFEZONE
+            )
             {
                 if (Configuration.Instance.MaxBuildingsPerLocation == 0)
                 {
