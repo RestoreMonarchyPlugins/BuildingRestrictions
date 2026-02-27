@@ -17,7 +17,7 @@ namespace RestoreMonarchy.BuildingRestrictions
         public int MaxBarricades { get; set; }
         public bool EnableMaxStructures { get; set; }
         public int MaxStructures { get; set; }
-        public bool BypassAdmin { get; set; }
+
 
         public bool EnableMaxBarricadeHeight { get; set; } = false;
         public float MaxBarricadeHeight { get; set; } = 100;
@@ -27,6 +27,17 @@ namespace RestoreMonarchy.BuildingRestrictions
         public bool EnableMaxBuildingsPerLocation { get; set; } = false;
         public float MaxBuildingsPerLocationHeight { get; set; } = 100;
         public int MaxBuildingsPerLocation { get; set; } = 10;
+        [XmlArrayItem("Item")]
+        public ExcludedItem[] LocationRestrictionExcludedIds { get; set; } =
+        [
+            new(362, "Campfire"),
+            new(359, "Maple Torch"),
+            new(360, "Birch Torch"),
+            new(361, "Pine Torch")
+        ];
+
+        public bool EnableRoadRestriction { get; set; } = false;
+        public float RoadRestrictionHeight { get; set; } = 5;
 
         [XmlArrayItem("Barricade")]
         public BuildingRestriction[] Barricades { get; set; } = [];
@@ -46,7 +57,7 @@ namespace RestoreMonarchy.BuildingRestrictions
             MaxBarricades = 100;
             EnableMaxStructures = false;
             MaxStructures = 150;
-            BypassAdmin = false;
+
 
             EnableMaxBarricadeHeight = false;
             MaxBarricadeHeight = 100;
@@ -56,6 +67,16 @@ namespace RestoreMonarchy.BuildingRestrictions
             EnableMaxBuildingsPerLocation = false;
             MaxBuildingsPerLocationHeight = 100;
             MaxBuildingsPerLocation = 10;
+            LocationRestrictionExcludedIds =
+            [
+                new(362, "Campfire"),
+                new(359, "Maple Torch"),
+                new(360, "Birch Torch"),
+                new(361, "Pine Torch")
+            ];
+
+            EnableRoadRestriction = false;
+            RoadRestrictionHeight = 5;
 
             Barricades =
             [

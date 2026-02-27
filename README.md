@@ -8,7 +8,8 @@ A plugin that allows server admins to set limits on the number of buildings play
 - Limit barricades and structures separately
 - Set specific limits for different building types
 - Height restrictions for buildings
-- Location-based building limits
+- Location-based building limits with bypass permission and configurable excluded items
+- Road building restriction (both spline roads and city street objects)
 - Multipliers for players with special permissions
 
 ## Commands
@@ -21,6 +22,10 @@ A plugin that allows server admins to set limits on the number of buildings play
 - `buildingstats` - Allows using the `/buildingstats` command
 - `buildingstats.other` - Allows checking other players' building stats
 - `buildings.vip` - Example permission for multiplier (customizable)
+- `buildings.location.bypass` - Bypass location-based building limits
+- `buildings.road.bypass` - Bypass road building restriction
+
+> **Note**: Admins always have all permissions in RocketMod, so they will automatically bypass location and road restrictions.
 
 ## Configuration
 
@@ -35,7 +40,6 @@ A plugin that allows server admins to set limits on the number of buildings play
 <MaxBarricades>100</MaxBarricades>
 <EnableMaxStructures>false</EnableMaxStructures>
 <MaxStructures>150</MaxStructures>
-<BypassAdmin>false</BypassAdmin>
 ```
 
 - `MessageColor` - Color of plugin messages
@@ -46,7 +50,6 @@ A plugin that allows server admins to set limits on the number of buildings play
 - `MaxBarricades` - Maximum barricades allowed per player
 - `EnableMaxStructures` - Set to `true` to limit structures separately
 - `MaxStructures` - Maximum structures allowed per player
-- `BypassAdmin` - Set to `true` to let admins ignore all restrictions
 
 ### Height Restrictions
 
@@ -62,19 +65,47 @@ A plugin that allows server admins to set limits on the number of buildings play
 - `EnableMaxStructureHeight` - Set to `true` to limit structure height
 - `MaxStructureHeight` - Maximum height (in meters) for structures
 
+### Road Restriction
+
+```xml
+<EnableRoadRestriction>false</EnableRoadRestriction>
+<RoadRestrictionHeight>5</RoadRestrictionHeight>
+```
+
+- `EnableRoadRestriction` - Set to `true` to prevent building on roads
+- `RoadRestrictionHeight` - Maximum height (in meters) above a road surface where building is blocked
+
+When enabled, players cannot place any barricades or structures on roads. This includes:
+- **Spline roads** - Roads created with the road tool in the map editor
+- **Object roads** - Road objects placed in cities (any object with chart type `STREET`, `ROAD`, or `HIGHWAY`)
+
+Players with the `buildings.road.bypass` permission can still build on roads.
+
 ### Location Restrictions
 
 ```xml
 <EnableMaxBuildingsPerLocation>false</EnableMaxBuildingsPerLocation>
 <MaxBuildingsPerLocationHeight>100</MaxBuildingsPerLocationHeight>
 <MaxBuildingsPerLocation>10</MaxBuildingsPerLocation>
+<LocationRestrictionExcludedIds>
+  <Item Id="362" Name="Campfire" />
+  <Item Id="359" Name="Maple Torch" />
+  <Item Id="360" Name="Birch Torch" />
+  <Item Id="361" Name="Pine Torch" />
+</LocationRestrictionExcludedIds>
 ```
 
 - `EnableMaxBuildingsPerLocation` - Set to `true` to limit buildings in specific areas
 - `MaxBuildingsPerLocationHeight` - Maximum height for location detection
 - `MaxBuildingsPerLocation` - Maximum buildings allowed in a location
   - Set to `0` to completely disable building in locations
-  - The following aren't counted: Safezone Radiators, Horde Beacons, Charges, Vehicles
+- `LocationRestrictionExcludedIds` - List of item IDs that are excluded from location limits. These items can always be placed regardless of the limit, and they don't count toward the limit for other buildings.
+  - `Id` - The item ID in Unturned
+  - `Name` - Display name for reference (doesn't affect functionality)
+
+The following building types are always excluded from location counting: Safezone Radiators, Horde Beacons, Charges, and Vehicle barricades.
+
+Players with the `buildings.location.bypass` permission can ignore location limits entirely.
 
 ### Specific Building Limits
 
@@ -109,7 +140,7 @@ You can restrict buildings in three ways:
 2. **By Specific Item ID**: Use the `ItemId` attribute to restrict a specific item. For example:
    - `ItemId="365"` restricts Sandbag barricades specifically
    - `ItemId="371"` restricts Metal Walls specifically
-   
+
 3. **Combined Restrictions**: You can have both category restrictions and specific item restrictions active at the same time.
 
 > **Note**: When using ItemId, you need to know the exact ID number of the item in Unturned. Using ItemId will override category-based restrictions for that specific item. The `Name` attribute is just for your reference and doesn't need to match the exact item name in Unturned.
@@ -130,11 +161,11 @@ You can restrict buildings in three ways:
 
 ### Barricade Types
 ```
-FORTIFICATION, BARRICADE, DOOR, GATE, BED, LADDER, STORAGE, FARM, 
-TORCH, CAMPFIRE, SPIKE, WIRE, GENERATOR, SPOT, SAFEZONE, FREEFORM, 
-SIGN, VEHICLE, CLAIM, BEACON, STORAGE_WALL, BARREL_RAIN, OIL, CAGE, 
-SHUTTER, TANK, CHARGE, SENTRY, SENTRY_FREEFORM, OVEN, LIBRARY, 
-OXYGENATOR, GLASS, NOTE, HATCH, MANNEQUIN, STEREO, SIGN_WALL, 
+FORTIFICATION, BARRICADE, DOOR, GATE, BED, LADDER, STORAGE, FARM,
+TORCH, CAMPFIRE, SPIKE, WIRE, GENERATOR, SPOT, SAFEZONE, FREEFORM,
+SIGN, VEHICLE, CLAIM, BEACON, STORAGE_WALL, BARREL_RAIN, OIL, CAGE,
+SHUTTER, TANK, CHARGE, SENTRY, SENTRY_FREEFORM, OVEN, LIBRARY,
+OXYGENATOR, GLASS, NOTE, HATCH, MANNEQUIN, STEREO, SIGN_WALL,
 CLOCK, BARRICADE_WALL
 ```
 

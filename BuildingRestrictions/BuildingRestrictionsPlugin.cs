@@ -84,7 +84,8 @@ namespace RestoreMonarchy.BuildingRestrictions
             { "MaxStructureHeightRestriction", "You can't build [[b]]{0}[[/b]] because it's higher than max [[b]]{1}m[[/b]] height above the ground." },
             { "BuildingsInLocationRestriction", "You can't build [[b]]{0}[[/b]] here because you have reached the limit of max [[b]]{1}[[/b]] buildings in this location." },
             { "BuildingsInLocationRestrictionNone", "You can't build in this location." },
-            { "BuildingsInLocationRestrictionInfo", "You have built [[b]]{0}/{1}[[/b]] buildings in this location." }
+            { "BuildingsInLocationRestrictionInfo", "You have built [[b]]{0}/{1}[[/b]] buildings in this location." },
+            { "RoadRestriction", "You can't build [[b]]{0}[[/b]] on the road." }
         };
 
         private void OnLevelLoaded(int level)
@@ -186,16 +187,21 @@ namespace RestoreMonarchy.BuildingRestrictions
 
             UnturnedPlayer unturnedPlayer = UnturnedPlayer.FromPlayer(player);
 
-            if (Configuration.Instance.BypassAdmin && unturnedPlayer.IsAdmin)
-            {
-                return;
-            }
 
             float groundHeight = LevelGround.getHeight(point);
             float barricadeHeight = point.y - groundHeight;
             if (Configuration.Instance.EnableMaxBarricadeHeight && barricadeHeight > Configuration.Instance.MaxBarricadeHeight)
             {
                 SendMessageToPlayer(unturnedPlayer, "MaxBarricadeHeightRestriction", asset.itemName, Configuration.Instance.MaxBarricadeHeight.ToString("N0"));
+                shouldAllow = false;
+                return;
+            }
+
+            if (Configuration.Instance.EnableRoadRestriction
+                && !unturnedPlayer.HasPermission("buildings.road.bypass")
+                && IsOnRoad(point))
+            {
+                SendMessageToPlayer(unturnedPlayer, "RoadRestriction", asset.itemName);
                 shouldAllow = false;
                 return;
             }
@@ -217,7 +223,7 @@ namespace RestoreMonarchy.BuildingRestrictions
                     return;
                 }
             }
-            
+
             if (Configuration.Instance.EnableMaxBarricades)
             {
                 int barricadesCount = playerBuildings?.Barricades.Count ?? 0;
@@ -232,13 +238,15 @@ namespace RestoreMonarchy.BuildingRestrictions
             }
 
             System.Action action = null;
-            if (Configuration.Instance.EnableMaxBuildingsPerLocation 
+            if (Configuration.Instance.EnableMaxBuildingsPerLocation
+                && !unturnedPlayer.HasPermission("buildings.location.bypass")
                 && TryGetBoundsWithHeight(point, out byte boundIndex)
                 && (hit == null || !hit.transform.CompareTag("Vehicle"))
-                && asset.build != EBuild.BEACON 
-                && asset.build != EBuild.VEHICLE 
-                && asset.build != EBuild.CHARGE 
+                && asset.build != EBuild.BEACON
+                && asset.build != EBuild.VEHICLE
+                && asset.build != EBuild.CHARGE
                 && asset.build != EBuild.SAFEZONE
+                && !IsLocationExcludedItem(asset.id)
             )
             {
                 if (Configuration.Instance.MaxBuildingsPerLocation == 0)
@@ -248,7 +256,9 @@ namespace RestoreMonarchy.BuildingRestrictions
                     return;
                 }
 
-                int barricadesCount = playerBuildings?.Barricades.Count(x => x.IsInBound && x.BoundIndex == boundIndex) ?? 0;
+                int barricadesCount = playerBuildings?.Barricades.Count(x => x.IsInBound && x.BoundIndex == boundIndex
+                    && x.Build != EBuild.BEACON && x.Build != EBuild.VEHICLE && x.Build != EBuild.CHARGE && x.Build != EBuild.SAFEZONE
+                    && !IsLocationExcludedItem(x.ItemId)) ?? 0;
                 int structuresCount = playerBuildings?.Structures.Count(x => x.IsInBound && x.BoundIndex == boundIndex) ?? 0;
                 int buildingsCount = barricadesCount + structuresCount;
 
@@ -325,16 +335,21 @@ namespace RestoreMonarchy.BuildingRestrictions
 
             UnturnedPlayer unturnedPlayer = UnturnedPlayer.FromPlayer(player);
 
-            if (Configuration.Instance.BypassAdmin && unturnedPlayer.IsAdmin)
-            {
-                return;
-            }
 
             float groundHeight = LevelGround.getHeight(point);
             float structureHeight = point.y - groundHeight;
             if (Configuration.Instance.EnableMaxStructureHeight && structureHeight > Configuration.Instance.MaxStructureHeight)
             {
                 SendMessageToPlayer(unturnedPlayer, "MaxStructureHeightRestriction", asset.itemName, Configuration.Instance.MaxStructureHeight.ToString("N0"));
+                shouldAllow = false;
+                return;
+            }
+
+            if (Configuration.Instance.EnableRoadRestriction
+                && !unturnedPlayer.HasPermission("buildings.road.bypass")
+                && IsOnRoad(point))
+            {
+                SendMessageToPlayer(unturnedPlayer, "RoadRestriction", asset.itemName);
                 shouldAllow = false;
                 return;
             }
@@ -371,7 +386,9 @@ namespace RestoreMonarchy.BuildingRestrictions
             }
 
             System.Action action = null;
-            if (Configuration.Instance.EnableMaxBuildingsPerLocation && TryGetBoundsWithHeight(point, out byte boundIndex))
+            if (Configuration.Instance.EnableMaxBuildingsPerLocation
+                && !unturnedPlayer.HasPermission("buildings.location.bypass")
+                && TryGetBoundsWithHeight(point, out byte boundIndex))
             {
                 if (Configuration.Instance.MaxBuildingsPerLocation == 0)
                 {
@@ -380,7 +397,9 @@ namespace RestoreMonarchy.BuildingRestrictions
                     return;
                 }
 
-                int barricadesCount = playerBuildings?.Barricades.Count(x => x.IsInBound && x.BoundIndex == boundIndex) ?? 0;
+                int barricadesCount = playerBuildings?.Barricades.Count(x => x.IsInBound && x.BoundIndex == boundIndex
+                    && x.Build != EBuild.BEACON && x.Build != EBuild.VEHICLE && x.Build != EBuild.CHARGE && x.Build != EBuild.SAFEZONE
+                    && !IsLocationExcludedItem(x.ItemId)) ?? 0;
                 int structuresCount = playerBuildings?.Structures.Count(x => x.IsInBound && x.BoundIndex == boundIndex) ?? 0;
                 int buildingsCount = barricadesCount + structuresCount;
 
@@ -490,6 +509,52 @@ namespace RestoreMonarchy.BuildingRestrictions
             float buildingHeight = buildingY - goundLevel;
 
             return buildingHeight <= Configuration.Instance.MaxBuildingsPerLocationHeight;
+        }
+
+        private bool IsOnRoad(Vector3 point)
+        {
+            float height = Configuration.Instance.RoadRestrictionHeight;
+            Ray ray = new(point + Vector3.up * height, Vector3.down);
+            float distance = height * 2f;
+
+            // Check spline-based roads (layer 19 ENVIRONMENT)
+            if (Physics.Raycast(ray, out RaycastHit hit, distance, RayMasks.ENVIRONMENT))
+            {
+                Transform hitTransform = hit.transform;
+                if (hitTransform.name.StartsWith("Segment_")
+                    && hitTransform.parent != null
+                    && hitTransform.parent.name == "Road")
+                {
+                    return true;
+                }
+            }
+
+            // Check object-based roads like city streets (layers 15 LARGE, 16 MEDIUM, 17 SMALL)
+            int objectMask = (1 << 15) | (1 << 16) | (1 << 17);
+            if (Physics.Raycast(ray, out RaycastHit objectHit, distance, objectMask))
+            {
+                ObjectAsset objectAsset = LevelObjects.getAsset(objectHit.transform);
+                if (objectAsset != null)
+                {
+                    EObjectChart chart = objectAsset.chart;
+                    if (chart == EObjectChart.STREET || chart == EObjectChart.ROAD || chart == EObjectChart.HIGHWAY)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private bool IsLocationExcludedItem(ushort itemId)
+        {
+            ExcludedItem[] excludedItems = Configuration.Instance.LocationRestrictionExcludedIds;
+            if (excludedItems == null || excludedItems.Length == 0)
+            {
+                return false;
+            }
+            return excludedItems.Any(x => x.Id == itemId);
         }
 
         internal void SendMessageToPlayer(IRocketPlayer player, string translationKey, params object[] placeholder)
